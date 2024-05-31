@@ -7,6 +7,10 @@ import { ConfigService } from '@nestjs/config';
 import { promisify } from 'util';
 import * as crypto from 'crypto';
 import { RegisterDto } from './dto/register.dto';
+import { TokenModel } from './models/token.model';
+import { JwtService } from '@nestjs/jwt';
+import * as uuid from 'uuid';
+import { TokensInterface } from './types/tokens.interface';
 
 const randomBytesPromise = promisify(crypto.randomBytes);
 const pbkdf2Promise = promisify(crypto.pbkdf2);
@@ -18,8 +22,11 @@ export class AuthService {
   constructor(
     @InjectModel(UserModel.name)
     private readonly userModel: Model<UserModel>,
+    @InjectModel(TokenModel.name)
+    private readonly tokenModel: Model<TokenModel>,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   public async register(registerDto: RegisterDto): Promise<UserModel> {
@@ -43,6 +50,66 @@ export class AuthService {
       this.logger.error(err);
       return null;
     });
+  }
+
+  public async login(email: string, password: string): Promise<TokensInterface> {
+    const user = await this.validateUser(email, password);
+    const tokens = await this.issueToken(user);
+
+    return { accessToken: tokens[0], refreshToken: tokens[1] };
+  }
+
+  public async validateUser(email: string, password: string): Promise<UserModel> {
+    const user = await this.usersService.findUserByEmail(email);
+    const isValidPassword = await this.checkPassword(password, user.salt, user.passwordHash);
+
+    if (!isValidPassword) {
+      throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
+    }
+
+    return user;
+  }
+
+  public async issueToken(user: UserModel): Promise<string[]> {
+    const payload = { id: user.id, email: user.email };
+    const accessToken = 'Bearer ' + (await this.jwtService.signAsync(payload));
+    const refreshToken = uuid.v4();
+
+    await this.tokenModel.create({ accessToken, refreshToken, sub: user.id }).catch((err) => {
+      this.logger.error(err);
+      return null;
+    });
+
+    return [accessToken, refreshToken];
+  }
+
+  public async refreshToken(accessToken: string, refreshToken: string): Promise<TokensInterface> {
+    const token = await this.tokenModel
+      .findOneAndDelete({ accessToken, refreshToken })
+      .exec()
+      .catch((err) => {
+        this.logger.error(err);
+        return null;
+      });
+
+    if (!token) {
+      throw new HttpException('Invalid or expired token', HttpStatus.UNAUTHORIZED);
+    }
+
+    const user = await this.userModel
+      .findById(token.sub)
+      .exec()
+      .catch((err) => {
+        this.logger.error(err);
+        return null;
+      });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+    }
+
+    const [newAccessToken, newRefreshToken] = await this.issueToken(user);
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
   private async generateSalt(): Promise<string> {
