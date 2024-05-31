@@ -1,6 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
+@Schema()
+class OAuth {
+  @Prop({ required: true })
+  id: string;
+
+  @Prop({ required: true })
+  provider: string;
+
+  @Prop()
+  accessToken: string;
+
+  @Prop()
+  refreshToken: string;
+}
+
 @Schema({ timestamps: true })
 export class UserModel extends Document {
   @Prop({ unique: true, required: true })
@@ -14,6 +29,9 @@ export class UserModel extends Document {
 
   @Prop({ select: false })
   salt: string;
+
+  @Prop({ type: [OAuth], _id: false })
+  oauth: OAuth[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserModel);
