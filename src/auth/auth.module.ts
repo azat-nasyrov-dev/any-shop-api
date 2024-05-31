@@ -10,6 +10,8 @@ import { PassportModule } from '@nestjs/passport';
 import { getJwtConfig } from '../config/jwt.config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GitHubStrategy } from './strategies/github.strategy';
+import { GitHubAuthGuard } from './guards/github-auth.guard';
 
 @Module({
   imports: [
@@ -22,6 +24,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, GitHubStrategy, GitHubAuthGuard],
 })
 export class AuthModule {}

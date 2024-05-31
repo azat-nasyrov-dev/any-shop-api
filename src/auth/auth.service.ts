@@ -112,6 +112,22 @@ export class AuthService {
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
+  public async validateOAuthUser(user: any): Promise<UserModel> {
+    const existingUser = await this.userModel
+      .findOne({ 'oauth.id': user.oauth[0].id, 'oauth.provider': 'github' })
+      .exec();
+
+    if (existingUser) {
+      return existingUser;
+    }
+
+    const newUser = new this.userModel(user);
+    return await newUser.save().catch((err) => {
+      this.logger.error(err);
+      return null;
+    });
+  }
+
   private async generateSalt(): Promise<string> {
     const buffer = await randomBytesPromise(
       Number(this.configService.get<number>('CRYPTO_ITERATIONS')),
