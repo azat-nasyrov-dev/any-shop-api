@@ -3,7 +3,7 @@ import { Document, Schema as MSchema } from 'mongoose';
 import { CategoryModel, SubCategoryModel } from '../../categories/models/category.model';
 
 @Schema()
-export class ProductsModel extends Document {
+export class ProductModel extends Document {
   @Prop({ required: true })
   title: string;
 
@@ -23,4 +23,4 @@ export class ProductsModel extends Document {
   images: string[];
 }
 
-export const ProductSchema = SchemaFactory.createForClass(ProductsModel);
+export const ProductSchema = SchemaFactory.createForClass(ProductModel);
