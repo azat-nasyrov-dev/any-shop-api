@@ -66,6 +66,18 @@ export class ProductsService {
     return { product };
   }
 
+  public async getProductsByQuery(query: string): Promise<ProductModel[]> {
+    if (!query) {
+      throw new HttpException('Search query is required', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.productModel
+      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(20)
+      .exec();
+  }
+
   public async deleteProductById(id: string): Promise<ProductModel | null> {
     const deletedProduct = await this.productModel
       .findByIdAndDelete(id)

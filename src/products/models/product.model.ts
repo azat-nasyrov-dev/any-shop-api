@@ -24,3 +24,12 @@ export class ProductModel extends Document {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(ProductModel);
+
+ProductSchema.index(
+  { title: 'text', description: 'text' },
+  {
+    weights: { title: 10, description: 5 },
+    default_language: 'english',
+    name: 'TextSearchIndex',
+  },
+);

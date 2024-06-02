@@ -49,6 +49,14 @@ export class ProductsController {
     return await this.productsService.findProductById(id);
   }
 
+  @Get('/search')
+  public async getProductsByQuery(
+    @Query('query') query: string,
+  ): Promise<ProductsResponseInterface> {
+    const products = await this.productsService.getProductsByQuery(query);
+    return this.productsService.buildProductsResponse(products);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   public async deleteProductById(@Param('id') id: string): Promise<ProductModel | null> {
