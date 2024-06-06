@@ -11,6 +11,7 @@ import { TokenModel } from './models/token.model';
 import { JwtService } from '@nestjs/jwt';
 import * as uuid from 'uuid';
 import { TokensInterface } from './types/tokens.interface';
+import { MailService } from './mail.service';
 
 const randomBytesPromise = promisify(crypto.randomBytes);
 const pbkdf2Promise = promisify(crypto.pbkdf2);
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   public async register(registerDto: RegisterDto): Promise<UserModel> {
@@ -38,18 +40,53 @@ export class AuthService {
 
     const salt = await this.generateSalt();
     const passwordHash = await this.generatePassword(registerDto.password, salt);
+    const verificationToken = uuid.v4();
 
     const newUser = new this.userModel({
       email: registerDto.email,
       displayName: registerDto.displayName,
       passwordHash,
       salt,
+      verificationToken,
     });
 
-    return await newUser.save().catch((err) => {
+    await newUser.save().catch((err) => {
       this.logger.error(err);
       return null;
     });
+
+    await this.mailService
+      .sendMail({
+        to: newUser.email,
+        subject: 'Confirm your email',
+        locals: { token: verificationToken },
+        template: 'confirmation',
+      })
+      .catch((err) => {
+        this.logger.error(err);
+        throw new HttpException('Error sanding email', HttpStatus.INTERNAL_SERVER_ERROR);
+      });
+
+    return newUser;
+  }
+
+  public async confirmEmail(token: string): Promise<string> {
+    const user = await this.userModel.findOne({ verificationToken: token }).exec();
+
+    if (!user) {
+      throw new HttpException(
+        'The confirmation link is invalid or outdated',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    user.verificationToken = undefined;
+    await user.save().catch((err) => {
+      this.logger.error(err);
+      return null;
+    });
+
+    return uuid.v4();
   }
 
   public async login(email: string, password: string): Promise<TokensInterface> {
@@ -65,6 +102,10 @@ export class AuthService {
 
     if (!isValidPassword) {
       throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
+    }
+
+    if (user.verificationToken) {
+      throw new HttpException('Confirm your email', HttpStatus.BAD_REQUEST);
     }
 
     return user;

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Param,
   Post,
   Req,
   Res,
@@ -34,6 +35,11 @@ export class AuthController {
   @UsePipes(new ValidationPipe({ whitelist: true }))
   public async register(@Body() registerDto: RegisterDto): Promise<UserModel> {
     return await this.authService.register(registerDto);
+  }
+
+  @Get('confirm/:token')
+  public async confirmEmail(@Param('token') token: string): Promise<string> {
+    return await this.authService.confirmEmail(token);
   }
 
   @Post('login')
