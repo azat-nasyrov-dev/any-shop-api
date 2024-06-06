@@ -32,6 +32,9 @@ export class UserModel extends Document {
 
   @Prop({ type: [OAuth], _id: false })
   oauth: OAuth[];
+
+  @Prop({ index: true })
+  verificationToken: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserModel);
