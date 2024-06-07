@@ -26,5 +26,6 @@ import { MailService } from './mail.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, GitHubStrategy, GitHubAuthGuard, MailService],
+  exports: [MailService],
 })
 export class AuthModule {}
