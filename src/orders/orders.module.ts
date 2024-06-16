@@ -7,7 +7,13 @@ import { AuthModule } from '../auth/auth.module';
 import { ProductModel, ProductSchema } from '../products/models/product.model';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: OrderModel.name, schema: OrderSchema }, { name: ProductModel.name, schema: ProductSchema }]), AuthModule],
+  imports: [
+    MongooseModule.forFeature([
+      { name: OrderModel.name, schema: OrderSchema },
+      { name: ProductModel.name, schema: ProductSchema },
+    ]),
+    AuthModule,
+  ],
   controllers: [OrdersController],
   providers: [OrdersService],
 })
