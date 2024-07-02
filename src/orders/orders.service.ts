@@ -20,7 +20,7 @@ export class OrdersService {
   ) {}
 
   public async createOrder(createOrderDto: CreateOrderDto, user: UserModel): Promise<OrderModel> {
-    const order = new this.orderModel({
+    const order = await this.orderModel.create({
       user: user.id,
       product: createOrderDto.product,
       phone: createOrderDto.phone,
