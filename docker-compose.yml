@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: mongo:4.4.4
+    container_name: mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_LOGIN}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    volumes:
+      - ./mongo-data-4.4:/data/db
+  api:
+    container_name: any-shop-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - MONGO_LOGIN=${MONGO_LOGIN}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_HOST=db
+      - MONGO_PORT=${MONGO_PORT}
+      - MONGO_DATABASE=${MONGO_DATABASE}
+      - MONGO_AUTHDATABASE=${MONGO_AUTHDATABASE}
+      - CRYPTO_ITERATIONS=${CRYPTO_ITERATIONS}
+      - CRYPTO_HASH_LENGTH=${CRYPTO_HASH_LENGTH}
+      - CRYPTO_HASH_ALGORITHM=${CRYPTO_HASH_ALGORITHM}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_ACCESS_TOKEN_EXPIRES_IN=${JWT_ACCESS_TOKEN_EXPIRES_IN}
+      - JWT_REFRESH_TOKEN_EXPIRES_IN=${JWT_REFRESH_TOKEN_EXPIRES_IN}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    volumes:
+      - ./.env:/app/.env
+volumes:
+  mongo-data-4.4:
